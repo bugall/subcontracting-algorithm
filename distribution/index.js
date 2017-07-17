@@ -17,7 +17,7 @@ const services = [{
     rate: 3.5,
     max_qty: 6,
     item_types: [{
-        name: '婴儿奶粉'
+        name: '成人奶粉'
     }]
 }, {
     _id: 'a8b3f33',
@@ -87,44 +87,131 @@ const orders = [{
 }];
 
 class Distribution {
-    // TODO 三种模式： 'price' 价格优先, 'speed' 速度优先
-    
-    constructor(services, orders) {
+    // TODO 2种模式： 'price' 价格优先, 'speed' 速度优先
+    constructor(services, order) {
         this.services = services;
-        this.orders = orders;
+        this.order = order;
         this.mode = 'speed';
-        this.ordersInfo = [];
+        this.productsInfo = [];
+        this.orderRecursiveInfo = {};
     }
 
-    generatOrdersDependency() {
-        _.forEach(this.orders, (order) => {
-            this.ordersInfo[order._id] = _.map(
+    generatOrderDependency() {
+        _.forEach(this.order, (product) => {
+            // init
+            this.orderRecursiveInfo[product._id] = {};
+            this.productsInfo[product._id] = { dependency: {} };
+            
+            this.productsInfo[product._id].dependency = _.map(
                 _.filter(this.services, (service) => {
                     for (let index in service.item_types) {
                         const type = service.item_types[index];
-                        if (type.name === order.type) return true;
+                        if (type.name === product.type) return true;
                     }
                     return false;
                 }), 
             '_id');
         });
-        console.log(this.ordersInfo);
     }
-    generatOrderCombination(orderId) {
+    generatProductCombination(productId, productCounter, layerCounter, cb) {
+        const productInfo = _.filter(this.order, (product) => product._id === productId)[0];
+        const productTotal = productInfo.qty;
+        if (layerCounter <=0 ) {
+            if (productCounter === productTotal) cb();
+            return;
+        }
+        for (let i = 0; i <= productTotal; i++) {
+            if (productCounter + i <= productTotal && layerCounter > 0 ) {
+                this.orderRecursiveInfo[productId][layerCounter] =  i;
+                this.generatProductCombination(productId, productCounter + i, layerCounter-1, cb);
+            }
+        }
+    }
+    productCombinationProxy(productIndex) {
+        if (productIndex >= this.order.length) return;
+        const productId = this.order[productIndex]._id;
+        this.generatProductCombination(productId, 0, this.productsInfo[productId].dependency.length, () => {
+            // TODO 把check写完就ok了。
+            const { successFlag, packageCounterInfo } = this.checkProductServicesValid(productId);
+            if (successFlag) {
+                this.productCombinationProxy(productIndex+1);
+            }
+        });
+    }
+    showMeTheAnswer() {
+        this.generatOrderDependency();
+        this.productCombinationProxy(0);
+    }
+    // 查看商品对应的services是否满足
+    checkProductServicesValid(productId) {
+        // 产品的排列组合数 {'1': 10, '2': 0}
+        const productRecursiveInfo = this.orderRecursiveInfo[productId];
+        const productDependency = this.productsInfo[productId].dependency;
+        const productInfo = _.forEach(this.order, (product) => product._id === productId)[0];
+        const packageCounterInfo = {};
+        let serviceDistFlag = true;
+        _.forEach(productRecursiveInfo, (value, index) => {
+            // 10个商品通过1号服务
+            const serviceInfo = _.filter(this.services, (service) => service._id === productDependency[Number(index - 1)])[0];
+            // 判断是否可以满足
+            let productCounter = 0;
+            let packageCounter = 1;
+            let packageInfo = {
+                weight: 0,
+                qty: 0,
+            };
+            while (productCounter !== value) {
+                let allCheckFlag = 2;
+                // 开始一个个的装包
+                if (packageInfo.weight + productInfo.weight <= serviceInfo.max_weight || 
+                    _.isEmpty(serviceInfo.max_weight)) {
+                    allCheckFlag--;
+                }
+                if (packageInfo.qty + 1 <= serviceInfo.max_qty ||
+                    _.isEmpty(serviceInfo.max_qty)) {
+                    allCheckFlag--;
+                }
+                if (allCheckFlag === 0) {
+                    packageInfo.weight += productInfo.weight;
+                    packageInfo.qty++;
+                } else {
+                    packageInfo = {
+                        weight: 0,
+                        qty: 0
+                    };
+                    packageCounter++;
+                }
+                productCounter++;
+            }
+            // if (value !== 0) {
+            //     console.log(value,'---' ,packageCounter,'----',serviceInfo,'---' , packageInfo,'---' , productInfo, '---------------------------');
+            // }
+            // 如果有分配商品,但是不能顺利装包
+            if (productCounter !== value && value !== 0) {
+                // console.log('Illegal dist:',serviceInfo, value);
+                serviceDistFlag = false;
+            } else {
+                // 记录满足商品的前提下, 使用了多少个包
+                packageCounterInfo[serviceInfo._id] = packageCounter;
+            }
+        });
+        return { success: serviceDistFlag, packageCounterInfo: packageCounterInfo };
+    }
+    caculCost() {
+
+    }
+    // 查看整个订单是否满足services
+    checkOrderServicesValid() {
 
     }
     // 速度优先模式
     setSpeedPreferredMode() {
-
     }
     
     // 价格优先模式，默认价格优先
     setPricePreferredMode() {
-
     }
-
-    
 }
 
 const distribution = new Distribution(services, orders);
-distribution.generatDependency();
+distribution.showMeTheAnswer();
