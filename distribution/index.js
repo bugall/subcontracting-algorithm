@@ -134,6 +134,7 @@ class Distribution {
             this.checkOrderServicesValid();
             return;
         }
+        
         const productId = this.order[productIndex]._id;
         this.generatProductCombination(productId, 0, this.productsInfo[productId].dependency.length, () => {
             // TODO 把check写完就ok了。
