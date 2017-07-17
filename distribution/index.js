@@ -94,6 +94,7 @@ class Distribution {
         this.mode = 'speed';
         this.productsInfo = [];
         this.orderRecursiveInfo = {};
+        this.finalAnswer= {};
     }
 
     generatOrderDependency() {
@@ -128,12 +129,17 @@ class Distribution {
         }
     }
     productCombinationProxy(productIndex) {
-        if (productIndex >= this.order.length) return;
+        // 找到一种组合
+        if (productIndex >= this.order.length) {
+            this.checkOrderServicesValid();
+            return;
+        }
         const productId = this.order[productIndex]._id;
         this.generatProductCombination(productId, 0, this.productsInfo[productId].dependency.length, () => {
             // TODO 把check写完就ok了。
-            const { successFlag, packageCounterInfo } = this.checkProductServicesValid(productId);
-            if (successFlag) {
+            // TODO 阶段检测优化暂时不做,直接检查最终状态的合法性
+            // const { successFlag, packageCounterInfo } = this.checkProductServicesValid(productId);
+            if (1 === 1) {
                 this.productCombinationProxy(productIndex+1);
             }
         });
