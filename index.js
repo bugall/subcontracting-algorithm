@@ -1,5 +1,4 @@
-const _ = require('lodash');
-const distribution = require('./src');
+const Distribution = require('./src');
 const services = [{
     _id: 'a8b3f31',
     name: '奶粉经济线 - 成人',
@@ -92,3 +91,6 @@ const orders = [{
     value: 15,
     qty: 3,
 }];
+
+const distribution = new Distribution(services, orders);
+distribution.showMeTheAnswer();

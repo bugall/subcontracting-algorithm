@@ -1,1 +1,1 @@
-module.exports = require('../distribution');
+module.exports = require('./distribution');

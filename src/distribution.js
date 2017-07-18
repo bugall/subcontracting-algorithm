@@ -65,7 +65,6 @@ class Distribution {
     showMeTheAnswer() {
         this.generatOrderDependency();
         this.productCombinationProxy(0);
-        return this.finalAnswer;
     }
     // 查看商品对应的services是否满足
     checkProductServicesValid(productId) {
@@ -161,8 +160,6 @@ class Distribution {
             });
             productPackageInfo[product] = tmp;
         }
-
-        
         console.log(productPackageInfo);
     }
     initOrderExpressPackageByServiceId(serviceId) {
@@ -192,6 +189,4 @@ class Distribution {
     setPricePreferredMode() {
     }
 }
-
-const distribution = new Distribution(services, orders);
-distribution.showMeTheAnswer();
+module.exports = Distribution;
