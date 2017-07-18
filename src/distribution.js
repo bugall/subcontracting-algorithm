@@ -9,11 +9,10 @@ class Distribution {
         this.productsInfo = []; // 商品的信息[商品与服务的关系]
         this.orderRecursiveInfo = {}; // 保存订单里每个商品对应的快递的排列组合信息
         this.orderExpressPackageInfo = {}; // 订单装包的情况, 每个快递包的使用情况
-        this.productPackageInfo = {}; // 分包方案
+        this.usePackageCounter = {}; // 分包方案
         this.finalAnswer= {}; // 最终生成的快递订单信息
-        this.optimalProductPackageInfo ={}; // 最优的分包方案
+        this.optimalusePackageCounter ={}; // 最优的分包方案
     }
-
     generatOrderDependency() {
         _.forEach(this.order, (product) => {
             // init
@@ -54,9 +53,7 @@ class Distribution {
 
         const productId = this.order[productIndex]._id;
         this.generatProductCombination(productId, 0, this.productsInfo[productId].dependency.length, () => {
-            // TODO 把check写完就ok了。
             // TODO 阶段检测优化暂时不做,直接检查最终状态的合法性
-            // const { successFlag, packageCounterInfo } = this.checkProductServicesValid(productId);
             if (1 === 1) {
                 this.productCombinationProxy(productIndex+1);
             }
@@ -65,11 +62,6 @@ class Distribution {
     showMeTheAnswer() {
         this.generatOrderDependency();
         this.productCombinationProxy(0);
-    }
-    // 查看商品对应的services是否满足
-    checkProductServicesValid(productId) {
-        // 产品的排列组合数 {'1': 10, '2': 0}
-        return { success: serviceDistFlag, packageCounterInfo: packageCounterInfo };
     }
     caculCost() {
 
@@ -81,7 +73,7 @@ class Distribution {
             this.takeProductToExpressPackage(productId);
         });
         this.calculationCost();
-        this.productPackageInfo = {};
+        this.usePackageCounter = {};
         this.orderExpressPackageInfo = {};
     }
     takeProductToExpressPackage(productId) {
@@ -104,11 +96,12 @@ class Distribution {
             // 限制
             const secondLevelInfo = _.filter(this.services, (service) => service._id === serviceInfo._id)[0];
             const secondLevelServiceId = _.filter(secondLevelInfo.item_types, (item) => item.name === productInfo.type)[0]._id;
-            const secondLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].secondInfo[secondLevelServiceId];
-            const topLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].topInfo;
+            let secondLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].secondInfo[secondLevelServiceId];
+            let topLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].topInfo;
             
-            // 一个一个的装包，知道商品装完
+            // 一个一个的装包，直到商品装完
             while (productCounter !== value) {
+                // TODO 逻辑代码冗余
                 let allCheckFlag = 4;
                 // 一级限制判断
                 if ((topLevelPackageInfo.weight + productInfo.weight <= serviceInfo.max_weight) || !serviceInfo.max_weight) {
@@ -132,6 +125,9 @@ class Distribution {
                 } else {
                     // 新建一个包继续装
                     packageCounter++;
+                    this.initOrderExpressPackageByServiceId(serviceInfo._id);
+                    secondLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].secondInfo[secondLevelServiceId];
+                    topLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].topInfo;
                 }
                 productCounter++;
             }
@@ -141,10 +137,10 @@ class Distribution {
                 serviceDistFlag = false;
             } else {
                 // 记录满足商品的前提下, 使用了多少个包
-                if (_.isEmpty(this.productPackageInfo[serviceInfo._id])) {
-                    this.productPackageInfo[serviceInfo._id] = packageCounter;
+                if (_.isEmpty(this.usePackageCounter[serviceInfo._id])) {
+                    this.usePackageCounter[serviceInfo._id] = packageCounter;
                 } else {
-                    this.productPackageInfo[serviceInfo._id] += packageCounter;
+                    this.usePackageCounter[serviceInfo._id] += packageCounter;
                 }
             }
         });
@@ -152,15 +148,16 @@ class Distribution {
     calculationCost() {
         // this.orderRecursiveInfo = { d8b3f31: { '1': 3, '2': 0 }, d8b3f32: { '1': 3 } }
         // this.productsinfo = { d8b3f31: { dependency: [ 'a8b3f31', 'a8b3f32' ] }, d8b3f32: { dependency: [ 'a8b3f35' ] } }
-        const productPackageInfo = {};
+        const usePackageCounter = {};
         for (let product in this.orderRecursiveInfo) {
             const tmp = {};
             _.forEach(this.orderRecursiveInfo[product], (value, index) => {
                 tmp[this.productsInfo[product].dependency[Number(index) - 1]] = value;
             });
-            productPackageInfo[product] = tmp;
+            usePackageCounter[product] = tmp;
         }
-        console.log(productPackageInfo);
+
+        console.log(`商品品使用哪个快递,邮寄多少商品:${JSON.stringify(usePackageCounter)}, 对应的快递需要拆分几个包:${JSON.stringify(this.usePackageCounter)}`);
     }
     initOrderExpressPackageByServiceId(serviceId) {
         const initOpt = {
@@ -178,7 +175,7 @@ class Distribution {
                 _.forEach(service.item_types, (item) => {
                     this.orderExpressPackageInfo[serviceId].secondInfo[item._id] = initOpt;
                 });
-            };
+            }
         });
     }
     // 速度优先模式
