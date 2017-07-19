@@ -1,4 +1,4 @@
-const Distribution = require('./src');
+const Distribution = require('./lib');
 const services = [{
     _id: 'express_b3f31',
     name: '奶粉经济线 - 成人',
