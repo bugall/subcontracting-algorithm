@@ -3,8 +3,8 @@ const services = [{
     _id: 'express_b3f31',
     name: '奶粉经济线 - 成人',
     type: 'cc', // 清关模式
-    rate: 3.5,
-    max_qty: 2,
+    rate: 5.5,
+    max_qty: 4,
     item_types: [{
         _id: 'express_b3f31_1',
         name: '成人奶粉'
@@ -60,7 +60,7 @@ const services = [{
         name: '食品',
         max_qty: 3 // 包裹内最多3个，但是混搭其他类型，包裹内物品总数可以是8
     }],
-    rate: 6,
+    rate: 3,
     min_weight: 1000, // 克，起重，包裹不达到重量按起重算。
     max_weight: 3500, // 克，包裹最大重量
     max_value: 200,
@@ -85,15 +85,16 @@ const orders = [{
     weight: 1300,
     type: '成人奶粉',
     value: 8,
-    qty: 10
+    qty: 13
 }, {
     _id: 'product_b3f32',
     name: 'Swisse维生素',
     weight: 300,
     type: '保健品',
     value: 15,
-    qty: 10,
+    qty: 25,
 }];
 
 const distribution = new Distribution(services, orders);
-distribution.showMeTheAnswer();
+const { plan, cost } = distribution.showMeTheAnswer();
+console.log(JSON.stringify(plan), cost);

@@ -11,7 +11,8 @@ class Distribution {
         this.orderExpressPackageInfo = {}; // 订单装包的情况, 每个快递包的使用情况
         this.usePackageCounter = {}; // 分包方案
         this.finalAnswer= {}; // 最终生成的快递订单信息
-        this.optimalusePackageCounter ={}; // 最优的分包方案
+        this.optimalUsePackage ={}; // 最优的分包方案
+        this.optimalCost = 10e9;
     }
     generatOrderDependency() {
         _.forEach(this.order, (product) => {
@@ -62,9 +63,7 @@ class Distribution {
     showMeTheAnswer() {
         this.generatOrderDependency();
         this.productCombinationProxy(0);
-    }
-    caculCost() {
-
+        return { plan: this.optimalUsePackage, cost: this.optimalCost };
     }
     // 查看整个订单是否满足services
     checkOrderServicesValid() {
@@ -163,6 +162,7 @@ class Distribution {
     calculationCost() {
         // this.orderRecursiveInfo = { d8b3f31: { '1': 3, '2': 0 }, d8b3f32: { '1': 3 } }
         // this.productsinfo = { d8b3f31: { dependency: [ 'a8b3f31', 'a8b3f32' ] }, d8b3f32: { dependency: [ 'a8b3f35' ] } }
+        const tmpPackageInfo = {};
         const usePackageCounter = {};
         for (let product in this.orderRecursiveInfo) {
             const tmp = {};
@@ -171,16 +171,40 @@ class Distribution {
             });
             usePackageCounter[product] = tmp;
         }
-        // items: [{
-        //                     name: '月光宝盒',
-        //                     qty: 2
-        //                 }],
-        //                 weight: 900,
-        //                 postage: 6, // 未达到1000g，按min_weight算
-        //                 service: '杂物线'
-        
-        // console.log(`商品品使用哪个快递,邮寄多少商品:${JSON.stringify(usePackageCounter)}, 对应的快递需要拆分几个包:${JSON.stringify(this.usePackageCounter)}`);
-        console.log(this.usePackageCounter);
+        let allCost = 0;
+        for(let expressId in this.usePackageCounter) {
+            let productInfo = {}
+            _.forEach(this.order, (product) => {
+                productInfo[product._id] = product;
+            });
+            const expressInfo = _.filter(this.services, (service) => service._id === expressId)[0];
+            const packages = this.usePackageCounter[expressId];
+            tmpPackageInfo[expressId] = [];
+            _.forEach(packages, (packageInfo) => {
+                let packageWeight = 0;
+                let tmp = [];
+                for(let productId in packageInfo) {
+                    packageWeight += productInfo[productId].weight * packageInfo[productId];
+                    tmp.push({
+                        _id: productId,
+                        name: productInfo[productId].name,
+                        qty: packageInfo[productId],
+                    });
+                }
+                const packageRate = Number((expressInfo.rate * Math.ceil( packageWeight / 1000)).toFixed(1));
+                allCost += packageRate;
+                tmpPackageInfo[expressId].push({
+                    item: tmp,
+                    weight: packageWeight,
+                    postage: packageRate,
+                    service: expressInfo.name
+                });
+            });
+        }
+        if (allCost < this.optimalCost) {
+            this.optimalUsePackage = tmpPackageInfo;
+            this.optimalCost = allCost;
+        }
     }
     initOrderExpressPackageByServiceId(serviceId) {
         const initOpt = {
