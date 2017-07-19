@@ -66,4 +66,32 @@ describe('分包', () => {
         // 杂物线2个包裹
         plan.express_5dad4fa.length.should.equal(2);
     });
+
+    it('能够给出婴儿奶粉的组合', () => {
+        const order = [{
+            _id: 'product_6abd1f3',
+            name: '爱他美1段',
+            weight: 1300,
+            type: '婴儿奶粉',
+            value: 30,
+            qty: 3,
+        }, {
+            _id: 'product_7abd1f3',
+            name: '爱他美2段',
+            weight: 1300,
+            type: '婴儿奶粉',
+            value: 40,
+            qty: 3
+        }];
+
+        const distrubution = new Distribution(services, order);
+        const { plan, cost } = distrubution.showMeTheAnswer();
+
+        // 总费用
+        cost.should.equal(35);
+        // 使用1个快递
+        Object.keys(plan).length.should.equal(1);
+        // 杂物线2个包裹
+        plan.express_2dad4fa.length.should.equal(2);
+    });
 });
