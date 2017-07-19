@@ -99,6 +99,11 @@ class Distribution {
             let topLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].topInfo;
             
             let singlePackageProductCounter = 0;
+            let useNewPackage = true;
+            // 有可能上一个包在装上一个商品的时候有空余空间,使用上一个包
+            if (topLevelPackageInfo.weight !== 0) {
+                useNewPackage = false;
+            }
             // 一个一个的装包，直到商品装完
             while (productCounter !== value) {
                 // TODO 逻辑代码冗余
@@ -122,14 +127,19 @@ class Distribution {
                     if (_.isEmpty(this.usePackageCounter[serviceInfo._id])) {
                         this.usePackageCounter[serviceInfo._id] = [{[productInfo._id]: singlePackageProductCounter}];
                     } else {
-                        this.usePackageCounter[serviceInfo._id].push({[productInfo._id]: singlePackageProductCounter});
+                        if (useNewPackage || singlePackageProductCounter === 0) {
+                            this.usePackageCounter[serviceInfo._id].push({[productInfo._id]: singlePackageProductCounter});
+                        } else {
+                            const leng = this.usePackageCounter[serviceInfo._id].length - 1;
+                            this.usePackageCounter[serviceInfo._id][leng][productInfo._id] = singlePackageProductCounter;
+                            useNewPackage = true;
+                        }
                     }
                     singlePackageProductCounter = 0;
                     this.initOrderExpressPackageByServiceId(serviceInfo._id);
                     secondLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].secondInfo[secondLevelServiceId];
                     topLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].topInfo;
                 }
-
                 topLevelPackageInfo.weight += productInfo.weight;
                 topLevelPackageInfo.qty++;
                 secondLevelPackageInfo.weight += productInfo.weight;
@@ -170,7 +180,7 @@ class Distribution {
         //                 service: '杂物线'
         
         // console.log(`商品品使用哪个快递,邮寄多少商品:${JSON.stringify(usePackageCounter)}, 对应的快递需要拆分几个包:${JSON.stringify(this.usePackageCounter)}`);
-        console.log(JSON.stringify(this.usePackageCounter));
+        console.log(this.usePackageCounter);
     }
     initOrderExpressPackageByServiceId(serviceId) {
         const initOpt = {
