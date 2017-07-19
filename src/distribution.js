@@ -106,16 +106,26 @@ class Distribution {
             // 一个一个的装包，直到商品装完
             while (productCounter !== value) {
                 // TODO 逻辑代码冗余
-                let allCheckFlag = 4;
+                let allCheckFlag = 6;
                 // 一级限制判断
+                // 重量
                 if ((topLevelPackageInfo.weight + productInfo.weight <= serviceInfo.max_weight) || !serviceInfo.max_weight) {
                     allCheckFlag--;
                 }
+                // 价值
+                if ((topLevelPackageInfo.value + productInfo.value <= serviceInfo.max_value) || !serviceInfo.max_value) {
+                    allCheckFlag--;
+                }
+                // 数量
                 if ((topLevelPackageInfo.qty + 1 <= serviceInfo.max_qty) || !serviceInfo.max_qty) {
                     allCheckFlag--;
                 }
+                
                 // 二级限制判断
                 if ((secondLevelPackageInfo.weight + productInfo.weight) <= secondLevelInfo.max_weight || !secondLevelInfo.max_weight) {
+                    allCheckFlag--;
+                }
+                if ((secondLevelPackageInfo.value + productInfo.value) <= secondLevelInfo.max_value || !secondLevelInfo.max_value) {
                     allCheckFlag--;
                 }
                 if ((secondLevelPackageInfo.qty + 1 <= secondLevelInfo.max_qty) || !secondLevelInfo.max_qty) {
