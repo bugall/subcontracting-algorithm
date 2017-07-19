@@ -92,13 +92,13 @@ class Distribution {
             }
             // 判断是否可以满足
             let productCounter = 0;
-            let packageCounter = 1;
             // 限制
             const secondLevelInfo = _.filter(this.services, (service) => service._id === serviceInfo._id)[0];
             const secondLevelServiceId = _.filter(secondLevelInfo.item_types, (item) => item.name === productInfo.type)[0]._id;
             let secondLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].secondInfo[secondLevelServiceId];
             let topLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].topInfo;
             
+            let singlePackageProductCounter = 0;
             // 一个一个的装包，直到商品装完
             while (productCounter !== value) {
                 // TODO 逻辑代码冗余
@@ -117,18 +117,24 @@ class Distribution {
                 if ((secondLevelPackageInfo.qty + 1 <= secondLevelInfo.max_qty) || !secondLevelInfo.max_qty) {
                     allCheckFlag--;
                 }
-                // 限制条件全都通过
-                if (allCheckFlag === 0) {
-                    topLevelPackageInfo.weight += productInfo.weight;
-                    topLevelPackageInfo.qty++;
-                    secondLevelPackageInfo.weight += productInfo.weight;
-                } else {
-                    // 新建一个包继续装
-                    packageCounter++;
+                
+                if (allCheckFlag !== 0) {
+                    if (_.isEmpty(this.usePackageCounter[serviceInfo._id])) {
+                        this.usePackageCounter[serviceInfo._id] = [{[productInfo._id]: singlePackageProductCounter}];
+                    } else {
+                        this.usePackageCounter[serviceInfo._id].push({[productInfo._id]: singlePackageProductCounter});
+                    }
+                    singlePackageProductCounter = 0;
                     this.initOrderExpressPackageByServiceId(serviceInfo._id);
                     secondLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].secondInfo[secondLevelServiceId];
                     topLevelPackageInfo = this.orderExpressPackageInfo[serviceInfo._id].topInfo;
                 }
+
+                topLevelPackageInfo.weight += productInfo.weight;
+                topLevelPackageInfo.qty++;
+                secondLevelPackageInfo.weight += productInfo.weight;
+
+                singlePackageProductCounter++;
                 productCounter++;
             }
             // 如果有分配商品,但是不能顺利装包
@@ -136,11 +142,10 @@ class Distribution {
                 // console.log('Illegal dist:',serviceInfo, value);
                 serviceDistFlag = false;
             } else {
-                // 记录满足商品的前提下, 使用了多少个包
                 if (_.isEmpty(this.usePackageCounter[serviceInfo._id])) {
-                    this.usePackageCounter[serviceInfo._id] = packageCounter;
+                    this.usePackageCounter[serviceInfo._id] = [{[productInfo._id]: singlePackageProductCounter}];
                 } else {
-                    this.usePackageCounter[serviceInfo._id] += packageCounter;
+                    this.usePackageCounter[serviceInfo._id].push({[productInfo._id]: singlePackageProductCounter});
                 }
             }
         });
@@ -156,8 +161,16 @@ class Distribution {
             });
             usePackageCounter[product] = tmp;
         }
-
-        console.log(`商品品使用哪个快递,邮寄多少商品:${JSON.stringify(usePackageCounter)}, 对应的快递需要拆分几个包:${JSON.stringify(this.usePackageCounter)}`);
+        // items: [{
+        //                     name: '月光宝盒',
+        //                     qty: 2
+        //                 }],
+        //                 weight: 900,
+        //                 postage: 6, // 未达到1000g，按min_weight算
+        //                 service: '杂物线'
+        
+        // console.log(`商品品使用哪个快递,邮寄多少商品:${JSON.stringify(usePackageCounter)}, 对应的快递需要拆分几个包:${JSON.stringify(this.usePackageCounter)}`);
+        console.log(JSON.stringify(this.usePackageCounter));
     }
     initOrderExpressPackageByServiceId(serviceId) {
         const initOpt = {

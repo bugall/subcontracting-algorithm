@@ -8,7 +8,7 @@ const services = [{
     item_types: [{
         _id: 'express_b3f31_1',
         name: '成人奶粉'
-    }]
+    }],
 }, {
     _id: 'express_b3f32',
     name: '奶粉经济线 - 婴儿',
