@@ -1,6 +1,5 @@
 const Distribution = require('../lib');
 const should = require('chai').should(); // jshint ignore:line
-const _ = require('lodash');
 const services = require('./config').services;
 
 describe('分包', () => {
