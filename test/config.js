@@ -26,7 +26,7 @@ const services = [{
         name: '婴儿奶粉',
         _id: 'express_3dad4fa_1',
     }],
-    fixed_rate: 15,
+    fixed_rate: 16,
     min_qty: 3,
     max_qty: 3
 }, {
