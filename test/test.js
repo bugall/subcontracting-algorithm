@@ -91,7 +91,6 @@ describe('分包', () => {
 
         const distrubution = new Distribution(services, order);
         const { plan, cost } = distrubution.showMeTheAnswer();
-        
         // 总费用
         cost.should.equal(29.1);
         // 使用1个快递
