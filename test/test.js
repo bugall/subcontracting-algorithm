@@ -14,6 +14,7 @@ describe('分包', () => {
         }];
         const distrubution = new Distribution(services, order);
         const { plan, cost } = distrubution.showMeTheAnswer();
+
         // 总费用
         cost.should.equal(67.2); 
         // 使用一个快递服务
@@ -21,13 +22,20 @@ describe('分包', () => {
         plan.should.have.property('e_1000001');
         // 打两个包
         plan.e_1000001.length.should.equal(2);
-        // 第一个包的信息
+        // 第1个包的信息
         plan.e_1000001[0].item.length.should.equal(1); // 第一个包裹里只有一个种类的商品
         plan.e_1000001[0].item[0].name.should.equal(order[0].name);
         plan.e_1000001[0].item[0]._id.should.equal(order[0]._id);
         plan.e_1000001[0].item[0].qty.should.equal(8);
         plan.e_1000001[0].weight.should.equal(10900);
         plan.e_1000001[0].postage.should.equal(38.15);
+        // 第2个包的信息
+        plan.e_1000001[1].item.length.should.equal(1); // 第一个包裹里只有一个种类的商品
+        plan.e_1000001[1].item[0].name.should.equal(order[0].name);
+        plan.e_1000001[1].item[0]._id.should.equal(order[0]._id);
+        plan.e_1000001[1].item[0].qty.should.equal(6);
+        plan.e_1000001[1].weight.should.equal(8300);
+        plan.e_1000001[1].postage.should.equal(29.05);
     });
     it('能区分杂物与成人奶粉', () => {
         const order = [{
